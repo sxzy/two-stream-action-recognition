@@ -50,6 +50,7 @@ class AverageMeter(object):
         self.avg = self.sum / self.count
 
 def save_checkpoint(state, is_best, checkpoint, model_best):
+  // state 保存的网络参数，checkpoint 
     torch.save(state, checkpoint)
     if is_best:
         shutil.copyfile(checkpoint, model_best)

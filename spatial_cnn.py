@@ -23,8 +23,8 @@ from network import *
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 parser = argparse.ArgumentParser(description='UCF101 spatial stream on resnet101')
-parser.add_argument('--epochs', default=500, type=int, metavar='N', help='number of total epochs')
-parser.add_argument('--batch-size', default=25, type=int, metavar='N', help='mini-batch size (default: 25)')
+parser.add_argument('--epochs', default=50, type=int, metavar='N', help='number of total epochs')
+parser.add_argument('--batch-size', default=15, type=int, metavar='N', help='mini-batch size (default: 15)')
 parser.add_argument('--lr', default=5e-4, type=float, metavar='LR', help='initial learning rate')
 parser.add_argument('--evaluate', dest='evaluate', action='store_true', help='evaluate model on validation set')
 parser.add_argument('--resume', default='', type=str, metavar='PATH', help='path to latest checkpoint (default: none)')
@@ -39,8 +39,8 @@ def main():
     data_loader = dataloader.spatial_dataloader(
                         BATCH_SIZE=arg.batch_size,
                         num_workers=8,
-                        path='/home/ubuntu/data/UCF101/spatial_no_sampled/',
-                        ucf_list ='/home/ubuntu/cvlab/pytorch/ucf101_two_stream/github/UCF_list/',
+                        path='/home/lenovo/xuzeshan/data/UCF101/',
+                        ucf_list ='/home/lenovo/xuzeshan/two-stream-action-recognition/UCF_lis/',
                         ucf_split ='01', 
                         )
     
@@ -61,6 +61,7 @@ def main():
     model.run()
 
 class Spatial_CNN():
+    // 一些参数的自定义
     def __init__(self, nb_epochs, lr, batch_size, resume, start_epoch, evaluate, train_loader, test_loader, test_video):
         self.nb_epochs=nb_epochs
         self.lr=lr
@@ -73,6 +74,9 @@ class Spatial_CNN():
         self.best_prec1=0
         self.test_video=test_video
 
+    
+    
+    // 建立模型，build模型
     def build_model(self):
         print ('==> Build model and setup loss and optimizer')
         #build model
@@ -87,24 +91,26 @@ class Spatial_CNN():
             if os.path.isfile(self.resume):
                 print("==> loading checkpoint '{}'".format(self.resume))
                 checkpoint = torch.load(self.resume)
-                self.start_epoch = checkpoint['epoch']
-                self.best_prec1 = checkpoint['best_prec1']
+                self.start_epoch = checkpoint['epoch'] // 这些是什么
+                self.best_prec1 = checkpoint['best_prec1'] // 是不是当前节点的表现值
                 self.model.load_state_dict(checkpoint['state_dict'])
                 self.optimizer.load_state_dict(checkpoint['optimizer'])
                 print("==> loaded checkpoint '{}' (epoch {}) (best_prec1 {})"
                   .format(self.resume, checkpoint['epoch'], self.best_prec1))
             else:
                 print("==> no checkpoint found at '{}'".format(self.resume))
+          return false
         if self.evaluate:
             self.epoch = 0
             prec1, val_loss = self.validate_1epoch()
-            return
+            return true
 
     def run(self):
-        self.build_model()
-        self.resume_and_evaluate()
+        self.build_model()   // 创建模型
+        isEvaluate = self.resume_and_evaluate() // 查看是否用缓存的模型参数以及是否是验证的
         cudnn.benchmark = True
-        
+        if isEvaluate:
+          return
         for self.epoch in range(self.start_epoch, self.nb_epochs):
             self.train_1epoch()
             prec1, val_loss = self.validate_1epoch()
@@ -118,6 +124,7 @@ class Spatial_CNN():
                     pickle.dump(self.dic_video_level_preds,f)
                 f.close()
             
+            // util中定义的方法，存储训练模型的参数。
             save_checkpoint({
                 'epoch': self.epoch,
                 'state_dict': self.model.state_dict(),
@@ -144,9 +151,11 @@ class Spatial_CNN():
             data_time.update(time.time() - end)
             
             label = label.cuda(async=True)
-            target_var = Variable(label).cuda()
+            //????做什么
+            target_var = Variable(label).cuda() 
 
             # compute output
+            // ??? 做什么
             output = Variable(torch.zeros(len(data_dict['img1']),101).float()).cuda()
             for i in range(len(data_dict)):
                 key = 'img'+str(i)

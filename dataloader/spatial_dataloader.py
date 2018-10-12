@@ -22,9 +22,9 @@ class spatial_dataset(Dataset):
         if video_name.split('_')[0] == 'HandstandPushups':
             n,g = video_name.split('_',1)
             name = 'HandStandPushups_'+g
-            path = self.root_dir + 'HandstandPushups'+'/separated_images/v_'+name+'/v_'+name+'_'
+            path = self.root_dir + 'jpegs_256/v_'+name+'/frame'
         else:
-            path = self.root_dir + video_name.split('_')[0]+'/separated_images/v_'+video_name+'/v_'+video_name+'_'
+            path = self.root_dir + 'jpegs_256/v_'+video_name+'/frame'
          
         img = Image.open(path +str(index)+'.jpg')
         transformed_img = self.transform(img)
@@ -36,10 +36,11 @@ class spatial_dataset(Dataset):
 
         if self.mode == 'train':
             video_name, nb_clips = self.keys[idx].split(' ')
-            nb_clips = int(nb_clips)
+            nb_clips = int(nb_clips) // 假设是30
             clips = []
-            clips.append(random.randint(1, nb_clips/3))
-            clips.append(random.randint(nb_clips/3, nb_clips*2/3))
+            // 分成三等分，每一个等分中间去找一个随机数，随机抽取一个数。
+            clips.append(random.randint(1, nb_clips/3)) // 生成1到10的随机数
+            clips.append(random.randint(nb_clips/3, nb_clips*2/3)) 
             clips.append(random.randint(nb_clips*2/3, nb_clips+1))
             
         elif self.mode == 'val':
@@ -78,6 +79,8 @@ class spatial_dataloader():
         splitter = UCF101_splitter(path=ucf_list,split=ucf_split)
         self.train_video, self.test_video = splitter.split_video()
 
+    // 读取序列化文件，判断拿到当前视频的帧数。frame_count[Lunges_g07_c01]=248
+    // 疑问：为什么要单独写出HandStandPushups，这个视频也没有 什么特别的
     def load_frame_count(self):
         #print '==> Loading frame number of each video'
         with open('dic/frame_count.pickle','rb') as file:
@@ -105,12 +108,15 @@ class spatial_dataloader():
         self.dic_training={}
         for video in self.train_video:
             #print videoname
+            // 这里为什么要这么运算。要-10+1；
+            // 其中key是PommelHorse_g01_c03 frame数；value是标签id.
             nb_frame = self.frame_count[video]-10+1
             key = video+' '+ str(nb_frame)
             self.dic_training[key] = self.train_video[video]
                     
     def val_sample20(self):
         print '==> sampling testing frames'
+        // 为什么测试集就需要进行样本化呢 样本化具体指的是什么 
         self.dic_testing={}
         for video in self.test_video:
             nb_frame = self.frame_count[video]-10+1
@@ -161,7 +167,7 @@ class spatial_dataloader():
 if __name__ == '__main__':
     
     dataloader = spatial_dataloader(BATCH_SIZE=1, num_workers=1, 
-                                path='/home/ubuntu/data/UCF101/spatial_no_sampled/', 
-                                ucf_list='/home/ubuntu/cvlab/pytorch/ucf101_two_stream/github/UCF_list/',
+                                path='/home/lenovo/xuzeshan/data/UCF101/', 
+                                ucf_list='/home/lenovo/xuzeshan/two-stream-action-recognition/UCF_lis/',
                                 ucf_split='01')
     train_loader,val_loader,test_video = dataloader.run()
